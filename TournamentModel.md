@@ -21,7 +21,7 @@ Base type for humans involved in the tournament as competitors or as judges/refe
 - `name` ([Name][])
 - `title` (string) - a specific title for a person, such as 'ring announcer' or 'head coach' or 'assistant coach'
 - `notes` (string)
-- `type` (enum[string])
+- `role` (enum[string])
   - `competitor` (default) - A competitor within a tournament
   - `referee` - A referee responsible for ensuring proper competitor conduct and safety
   - `judge` - A judge responsible for determining the outcome of competitive matches based upon rules and penalties of the type of  competition
@@ -57,14 +57,17 @@ A competitor within a tournament is one who competes in matches against other co
 - `coaches` (array[[Person][]]) - One or more coaches associated with the competitor  
 
 ## Team (object)
-A team is a group of one or more competitors possibly with one or more coaches
-- `members` (array[[Competitor][]], required) - The members of the team
+A team is a group of one or more Atheletes possibly with one or more coaches
+- `name` (string) - The name by which the team is collectively known
+- `members` (array[[Atheletes][]], required) - The competitive members of the team
+- `coaches` (array[Person][]) - One or more coaches of the team
 
-## WeightType (object) 
+
+## WeightTypes (object) 
 The type of weight measurement used by the tournament
 
 ### Properties
-- unitType (enum[string])
+- unit (enum[string])
   - `pounds` (default)
   - `kilograms`
 
@@ -72,17 +75,31 @@ The type of weight measurement used by the tournament
 The weight of a competitor, used to classify which divisions a competitor is qualified to compete within
 
 ### Properties
-- type ([WeightType][], required)
+- unit ([WeightType][], required)
 - value (number, required)
+
+## HeightType (object) 
+The type of height measurement used by the tournament
+
+### Properties
+- unitType (enum[string])
+  - `imperial` (default)
+  - `metric`
+
+## HeightTypes (object) 
+The type of height measurement used by the tournament
+
+### Properties
+- unit (enum[string])
+  - `imperial` (default)
+  - `metric`
 
 ## Height (object)
 The height of a competitor
 
 ### Properties
-- type (enum[string])
-  - `imperial` (default) - The imperial system of measurement using feet and inches
-  - `metric` - The metric system of measurement using meters and centimeters
-- major (number) - The major height component, such as 5 feet
+- unit ([HeightTypes][], required)
+- major (number, required) - The major height component, such as 5 feet
 - minor (number) - The minor height component, such as 7 inches
 
 ## Sport
