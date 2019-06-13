@@ -68,8 +68,8 @@ The type of weight measurement used by the tournament
 
 ### Properties
 - unit (enum[string])
-  - `pounds` (default)
-  - `kilograms`
+  - `imperial` (default)
+  - `metric`
 
 ## Weight (object)
 The weight of a competitor, used to classify which divisions a competitor is qualified to compete within

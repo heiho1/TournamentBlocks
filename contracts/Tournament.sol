@@ -1,5 +1,9 @@
 pragma solidity ^0.5.0;
 
+/**
+ * A competitive tournament among a number of competitors who participate in matches.
+ * Competitors may be individual athletes or teams of athletes.
+ */
 contract Tournament {
   string public title;
   string public startDateTime;
@@ -14,6 +18,9 @@ contract Tournament {
     Height height;
   }
 
+  /**
+   * A competitor is a group of two or more athletes who collectively compete against other teams.
+   */
   struct Competitor {
     Team team;
     Athlete athlete;
@@ -40,26 +47,42 @@ contract Tournament {
     string last;
   }
 
-  enum PersonTypes { coach, competitor, judge, referee, medical, other, security }
+  /**
+   * The roles which people associated with a tournament may perform
+   */
+  enum PersonRoles { coach, competitor, judge, referee, medical, other, security }
 
+  /**
+   * An individual capable of competing in a tournament
+   */
   struct Person {
     Name name;
     string title;
     string notes;
-    PersonTypes role;
+    PersonRoles role;
   }
 
+  /**
+   * A group of two or more athletes who collectively compete against other teams
+   */
   struct Team {
     Name name;
     Athlete[] members;
     Person[] coaches;
   }
 
-  enum WeightTypes { kilograms, pounds }
+  /**
+   * The unit of measurement used for specifying weights in a tournament
+   */
+  enum WeightTypes { imperial, metric }
 
+  /**
+   * A specific weight under a supported unit of weight measurement
+   */
   struct Weight {
     WeightTypes unit;
-    uint8 value;
+    uint8 major;
+    uint8 minor;
   }
 
   constructor() public {
