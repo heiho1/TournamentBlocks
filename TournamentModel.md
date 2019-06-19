@@ -8,10 +8,11 @@ A tournament with two or more participants capable of being scheduled.
 - `title` (string) - The name by which the tournament is publicly known.
 - `startDateTime` (string) - ISO 8601 encoding of the start date/time of the tournament.
 - `endDateTime` (string) - ISO 8601 encoding of the end date/time of the tournament.
-- `participants` (array[Person]) - All the people officially participating in a tournament, exclusive of people observing but not participating
-- `audience` (array[Person]) - People attending the tournament but not participating 
-- `divisions` (array[Division[]]) - The divisions hosted by this tournament
-- `matches` (array[Match[]]) - All matches of this tournament
+- `competitors` (array[Competitor][])
+- `participants` (array[Person][]) - All the people officially participating in a tournament, exclusive of people observing but not participating and competitors 
+- `audience` (array[Person][]) - People attending the tournament but not participating 
+- `divisions` (array[Division][]) - The divisions hosted by this tournament
+- `matches` (array[Match][]) - All matches of this tournament
 
 
 ## Person (object)

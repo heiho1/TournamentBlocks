@@ -8,6 +8,23 @@ contract Tournament {
   string public title;
   string public startDateTime;
   string public endDateTime;
+  mapping(bytes32 => Sport) sports;
+  mapping(bytes32 => Competitor) competitors;
+  mapping(bytes32 => Person) participants;
+  mapping(bytes32 => Person) audience;
+  address admin;
+  address owner;
+  uint idCounter;
+
+  modifier onlyAdmin {
+    require(msg.sender == admin, 'Only the tournament admin can execute');
+    _;
+  }
+
+  modifier onlyOwner {
+    require(msg.sender == owner, 'Only the tournament owner can execute');
+    _;
+  }
 
   /**
    * An athlete is a single person who competes
@@ -56,6 +73,7 @@ contract Tournament {
    * An individual capable of competing in a tournament
    */
   struct Person {
+    bytes32 id;
     Name name;
     string title;
     string notes;
@@ -63,9 +81,26 @@ contract Tournament {
   }
 
   /**
+   * A rule governing a sport within a tournament
+   */
+  struct Rule {
+    bytes32 id;
+    string name;
+    string description;
+  }
+
+  struct Sport {
+    bytes32 id;
+    string name;
+    string notes;
+    Rule[] rules;
+  }
+
+  /**
    * A group of two or more athletes who collectively compete against other teams
    */
   struct Team {
+    bytes32 id;
     Name name;
     Athlete[] members;
     Person[] coaches;
@@ -86,6 +121,12 @@ contract Tournament {
   }
 
   constructor() public {
-      // NYI
+      owner = msg.sender;
+      admin = msg.sender;
+  }
+
+  function newId() public returns (bytes32) {
+    ++idCounter;
+    return keccak256(abi.encodePacked(msg.sender, idCounter));
   }
 }
