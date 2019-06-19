@@ -26,6 +26,21 @@ contract Tournament {
     _;
   }
 
+
+  constructor() public {
+      owner = msg.sender;
+      admin = msg.sender;
+  }
+
+  function newId() public returns (bytes32) {
+    ++idCounter;
+    return keccak256(abi.encodePacked(msg.sender, idCounter));
+  }
+
+  function setAdmin(address newAdmin) public onlyOwner {
+    admin = newAdmin;
+  }
+  
   /**
    * An athlete is a single person who competes
    */
@@ -118,15 +133,5 @@ contract Tournament {
     WeightTypes unit;
     uint8 major;
     uint8 minor;
-  }
-
-  constructor() public {
-      owner = msg.sender;
-      admin = msg.sender;
-  }
-
-  function newId() public returns (bytes32) {
-    ++idCounter;
-    return keccak256(abi.encodePacked(msg.sender, idCounter));
   }
 }
