@@ -12,8 +12,8 @@ contract Tournament {
   mapping(bytes32 => Competitor) competitors;
   mapping(bytes32 => Person) participants;
   mapping(bytes32 => Person) audience;
-  address admin;
-  address owner;
+  address public admin;
+  address public owner;
   uint idCounter;
 
   modifier onlyAdmin {
@@ -29,7 +29,7 @@ contract Tournament {
 
   constructor() public {
       owner = msg.sender;
-      admin = msg.sender;
+      admin = owner;
   }
 
   function newId() public returns (bytes32) {
@@ -41,6 +41,10 @@ contract Tournament {
     admin = newAdmin;
   }
   
+  function setTitle(string memory newName) public onlyAdmin {
+    title = newName;
+  }
+
   /**
    * An athlete is a single person who competes
    */
