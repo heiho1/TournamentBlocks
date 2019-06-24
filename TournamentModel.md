@@ -68,7 +68,7 @@ A team is a group of one or more Atheletes possibly with one or more coaches
 The type of weight measurement used by the tournament
 
 ### Properties
-- unit (enum[string])
++ unit (enum[string])
   - `imperial` (default)
   - `metric`
 
@@ -76,8 +76,8 @@ The type of weight measurement used by the tournament
 The weight of a competitor, used to classify which divisions a competitor is qualified to compete within
 
 ### Properties
-- unit ([WeightType][], required)
-- value (number, required)
+- `unit` ([WeightType][], required)
+- `value` (number, required)
 
 ## HeightType (object) 
 The type of height measurement used by the tournament
@@ -99,9 +99,9 @@ The type of height measurement used by the tournament
 The height of a competitor
 
 ### Properties
-- unit ([HeightTypes][], required)
-- major (number, required) - The major height component, such as 5 feet
-- minor (number) - The minor height component, such as 7 inches
+- `unit` ([HeightTypes][], required)
+- `major` (number, required) - The major height component, such as 5 feet
+- `minor` (number) - The minor height component, such as 7 inches
 
 ## Sport
 A competitive sport for which one or more matches within a tournament are held
@@ -118,6 +118,7 @@ A division within a sport used to separate competitors within weight classes, su
 - `notes` (string) - Descriptive comments regarding this particular division
 - `minimum` ([Weight][]) - The lower bound for the weight class
 - `maximum` ([Weight][]) - The upper bound for the weight class
+- `competitors` ([Competitor][]) - The competitors within this tournament division
 
 ## Rule
 A rule governing a sport, such as uniform requirements or rules of fair play
@@ -133,13 +134,19 @@ A match is between two competitors, who may be teams, where the 'left' and 'righ
 - `duration` (string) - ISO 8601 encoding of the cumulative duration of this match
 - `notes` (string) - General notes on the match such as why the match was discontinued
 - `division` ([Division][]) - The division to which a match belongs
-- `left` ([Competitor][]) - A competitor competing against the 'right' hand competitor
-- `right` ([Competitor][]) - A competitor competing against the 'left' hand competitor
-- `leftScore` (number) - The cumulative points earned for this match by the left player
-- `rightScore` (number) - The cumulative points earned for this match by the right player
+- `competitors` array[Competitor][]) - The competitors in this match
 - `penalties` (array[Penalty][]) - The set of all penalties by either competitor
 - `disqualification` ([Penalty][]) - A competitor who was disqualified from a match entirely due to a rule violation
 - `discontinuance` ([Competitor][]) - A case where one competitor was unable to continue competition due to injury or yielding to the other competitor
+- `rounds` ([Round][]) - One or more rounds of this match upon which scoring has been applied
+
+## Round (object)
+A round between competitors within a match, such as the rounds of a boxing match or the quarters of a basketball game
+
+### Properties
+- `scores` (mapping) - The cumulative points earned for this Round by the competitors
+  - `key` (string) - A competitor id
+  - `value` (number) - A competitor score
 
 ## Penalty
 A penalty is a violation of rule or conduct which causes a loss of points or disqualification from a competition

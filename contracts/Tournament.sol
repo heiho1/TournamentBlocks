@@ -8,10 +8,13 @@ contract Tournament {
   string public title;
   string public startDateTime;
   string public endDateTime;
-  mapping(bytes32 => Sport) sports;
+  mapping(bytes32 => Sport) public sports;
   mapping(bytes32 => Competitor) competitors;
   mapping(bytes32 => Person) participants;
   mapping(bytes32 => Person) audience;
+  mapping(bytes32 => Division) divisions;
+  mapping(bytes32 => Rule) public rules;
+
   address public admin;
   address public owner;
   uint idCounter;
@@ -26,7 +29,6 @@ contract Tournament {
     _;
   }
 
-
   constructor() public {
       owner = msg.sender;
       admin = owner;
@@ -37,12 +39,39 @@ contract Tournament {
     return keccak256(abi.encodePacked(msg.sender, idCounter));
   }
 
+  /**
+   * Allows the owner of a tournament to specify an administrator responsible for executing
+   * the actual matches of the tournament
+   */
   function setAdmin(address newAdmin) public onlyOwner {
     admin = newAdmin;
   }
-  
+
+  /**
+   * Set the title of this tournament to a given name
+   */
   function setTitle(string memory newName) public onlyAdmin {
     title = newName;
+  }
+
+  /**
+   * Adds a sport to this tournament
+   */
+  function addSport(string memory name, string memory notes) public onlyAdmin
+      returns (bytes32) {
+    Sport memory sp = Sport({id: this.newId(), name: name, notes: notes});
+    sports[sp.id] = sp;
+    return sp.id;
+  }
+
+  /**
+   * Creates a rule for an sport's division
+   */
+  function newRule(string memory name, string memory description) public onlyAdmin
+      returns (bytes32) {
+    Rule memory rl = Rule({id: this.newId(), name: name, description: description});
+    rules[rl.id] = rl;
+    return rl.id;
   }
 
   /**
@@ -64,14 +93,46 @@ contract Tournament {
   }
 
   /**
+   * A division within the tournament for a particular set of competitors, such a competitors within a particular weight class
+   */
+  struct Division {
+    bytes32 id;
+    Sport sport;
+    string name;
+    string notes;
+    Weight minimum;
+    Weight maximum;
+    Competitor[] competitors;
+    Rule[] rules;
+  }
+
+  /**
    * The types of supported height measurements
    */
   enum HeightTypes { imperial, metric }
 
+  /**
+   * The height of an athlete in imperial or metric units
+   */
   struct Height {
     HeightTypes unit;
     uint8 major;
     uint8 minor;
+  }
+
+  /**
+   * A match between competitors who may accumulate points within rounds, penalties from rule violations
+   * or may be disqualified or unable to continue the competition, i.e. due to injury or emergency
+   */
+  struct Match {
+    string duration;
+    string notes;
+    Division division;
+    Competitor[] competitors;
+    Round[] rounds;
+    Penalty[] penalties;
+    Penalty disqualification;
+    Competitor discontinuance;
   }
 
   /**
@@ -81,6 +142,15 @@ contract Tournament {
     string first;
     string middle;
     string last;
+  }
+
+  /**
+   * A violation of a rule for a competition match by an offending Competitor
+   */
+  struct Penalty {
+    Rule rule;
+    uint256 cost;
+    Competitor offender;
   }
 
   /**
@@ -100,6 +170,13 @@ contract Tournament {
   }
 
   /**
+   * A round within a match with numerical scores mapped to competitor identifiers
+   */
+  struct Round {
+    mapping(string => uint256) scores;
+  }
+
+  /**
    * A rule governing a sport within a tournament
    */
   struct Rule {
@@ -108,11 +185,14 @@ contract Tournament {
     string description;
   }
 
+  /**
+   * A competitive Sport such as shuai jiao or baseball in which competitors attempt to gain the highest score
+   * to win matches
+   */
   struct Sport {
     bytes32 id;
     string name;
     string notes;
-    Rule[] rules;
   }
 
   /**
