@@ -8,12 +8,12 @@ A tournament with two or more participants capable of being scheduled.
 - `title` (string) - The name by which the tournament is publicly known.
 - `startDateTime` (string) - ISO 8601 encoding of the start date/time of the tournament.
 - `endDateTime` (string) - ISO 8601 encoding of the end date/time of the tournament.
+- `measurementType` ([MeasurementTypes][]) - the type of measurement units used by the tournament, such as imperial or metric
 - `competitors` (array[Competitor][])
 - `participants` (array[Person][]) - All the people officially participating in a tournament, exclusive of people observing but not participating and competitors 
 - `audience` (array[Person][]) - People attending the tournament but not participating 
 - `divisions` (array[Division][]) - The divisions hosted by this tournament
 - `matches` (array[Match][]) - All matches of this tournament
-
 
 ## Person (object)
 Base type for humans involved in the tournament as competitors or as judges/referees/other personnel.
@@ -39,6 +39,14 @@ A complex name containing one or more parts such as first, middle and last
 - `middle` (string)
 - `last` (string)
 
+## MeasurementTypes (object) 
+The type of measurement units used by the tournament
+
+### Properties
+- unit (enum[string])
+  - `imperial` (default)
+  - `metric`
+
 ## Athlete (object)
 An athlete is a single human competitor
 
@@ -48,14 +56,20 @@ An athlete is a single human competitor
 - `height` ([Height][])
 - `position` (string) - A specific position a competitor may have within a team oriented competition, such as quarterback or pitcher
 
+## CompetitorTypes (object) 
+The type of a competitor, such as an individual athlete or a team.
+
+### Properties
+- unit (enum[string])
+  - `athlete` (default)
+  - `team`
+
 ## Competitor (object)
 A competitor within a tournament is one who competes in matches against other competitors
 
 ### Properties 
-- One of
-  - `athlete` ([Athlete][]) - A competitor who is a single athlete
-  - `team` ([Team][]) - A competitor who is a team of athletes
-- `coaches` (array[[Person][]]) - One or more coaches associated with the competitor  
+- `id` (bytes32) - The identifier of the related type of competitor, i.e. a team id or an athlete id
+- `typeOf` ([CompetitorTypes][])
 
 ## Team (object)
 A team is a group of one or more Atheletes possibly with one or more coaches
@@ -64,42 +78,17 @@ A team is a group of one or more Atheletes possibly with one or more coaches
 - `coaches` (array[Person][]) - One or more coaches of the team
 
 
-## WeightTypes (object) 
-The type of weight measurement used by the tournament
-
-### Properties
-+ unit (enum[string])
-  - `imperial` (default)
-  - `metric`
-
 ## Weight (object)
 The weight of a competitor, used to classify which divisions a competitor is qualified to compete within
 
 ### Properties
-- `unit` ([WeightType][], required)
-- `value` (number, required)
-
-## HeightType (object) 
-The type of height measurement used by the tournament
-
-### Properties
-- unitType (enum[string])
-  - `imperial` (default)
-  - `metric`
-
-## HeightTypes (object) 
-The type of height measurement used by the tournament
-
-### Properties
-- unit (enum[string])
-  - `imperial` (default)
-  - `metric`
+- `major` (number, required) - The major height component, such as 5 feet
+- `minor` (number) - The minor height component, such as 7 inches
 
 ## Height (object)
 The height of a competitor
 
 ### Properties
-- `unit` ([HeightTypes][], required)
 - `major` (number, required) - The major height component, such as 5 feet
 - `minor` (number) - The minor height component, such as 7 inches
 

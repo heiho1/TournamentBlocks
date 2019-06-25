@@ -8,6 +8,7 @@ contract Tournament {
   string public title;
   string public startDateTime;
   string public endDateTime;
+  MeasurementTypes public measurementType = MeasurementTypes.imperial;
   mapping(bytes32 => Sport) public sports;
   mapping(bytes32 => Competitor) competitors;
   mapping(bytes32 => Person) participants;
@@ -67,11 +68,23 @@ contract Tournament {
   /**
    * Creates a rule for an sport's division
    */
-  function newRule(string memory name, string memory description) public onlyAdmin
+  function addRule(string memory name, string memory description) public onlyAdmin
       returns (bytes32) {
     Rule memory rl = Rule({id: this.newId(), name: name, description: description});
     rules[rl.id] = rl;
     return rl.id;
+  }
+
+  function addAthlete(string memory firstName, string memory lastName, uint8 weightMajor, uint8 weightMinor,
+      uint8 heightMajor, uint8 heightMinor) public onlyAdmin
+      returns (bytes32) {
+        Name memory nm = Name({first: firstName, middle: '', last: lastName});
+        Person memory psn = Person({id: this.newId(), name: nm, title: 'Athlete', notes: '', role: PersonRoles.competitor});
+        Weight memory wgt = Weight({major: weightMajor, minor: weightMinor});
+        Height memory hgt = Height({major: heightMajor, minor: heightMinor});
+        Athlete memory ath = Athlete({person: psn, weight: wgt, height: hgt});
+        Competitor memory cmp = Competitor({ id: ath.person.id, typeOf: CompetitorTypes.athlete });
+        return cmp.id;
   }
 
   /**
@@ -83,13 +96,14 @@ contract Tournament {
     Height height;
   }
 
+  enum CompetitorTypes { athlete, team }
+
   /**
    * A competitor is a group of two or more athletes who collectively compete against other teams.
    */
   struct Competitor {
-    Team team;
-    Athlete athlete;
-    Person[] coaches;
+    bytes32 id;
+    CompetitorTypes typeOf;
   }
 
   /**
@@ -107,15 +121,14 @@ contract Tournament {
   }
 
   /**
-   * The types of supported height measurements
+   * The types of measurement units that height/weight are valued in
    */
-  enum HeightTypes { imperial, metric }
+  enum MeasurementTypes { imperial, metric }
 
   /**
    * The height of an athlete in imperial or metric units
    */
   struct Height {
-    HeightTypes unit;
     uint8 major;
     uint8 minor;
   }
@@ -206,15 +219,9 @@ contract Tournament {
   }
 
   /**
-   * The unit of measurement used for specifying weights in a tournament
-   */
-  enum WeightTypes { imperial, metric }
-
-  /**
    * A specific weight under a supported unit of weight measurement
    */
   struct Weight {
-    WeightTypes unit;
     uint8 major;
     uint8 minor;
   }
