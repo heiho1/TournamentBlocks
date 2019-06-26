@@ -52,8 +52,10 @@ An athlete is a single human competitor
 
 ### Properties 
 - Include Person
-- `weight` ([Weight][], required)
-- `height` ([Height][])
+- `weightMajor` (int, required) - The major unit of weight, such as 145 pounds
+- `weightMinor` (int) - The minor unit of weight, such as 3 ounces
+- `heightMajor` (int) - The major unit of height, such as 5 feet
+- `heightMinor` (int) - The minor unit of height, such as 9 inches
 - `position` (string) - A specific position a competitor may have within a team oriented competition, such as quarterback or pitcher
 
 ## CompetitorTypes (object) 
@@ -76,7 +78,6 @@ A team is a group of one or more Atheletes possibly with one or more coaches
 - `name` (string) - The name by which the team is collectively known
 - `members` (array[[Atheletes][]], required) - The competitive members of the team
 - `coaches` (array[Person][]) - One or more coaches of the team
-
 
 ## Weight (object)
 The weight of a competitor, used to classify which divisions a competitor is qualified to compete within

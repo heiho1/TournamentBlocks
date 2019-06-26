@@ -38,9 +38,19 @@ contract('TournamentTests', function(accounts) {
     });
 
     it('A rule may be added', async function() {
-      let id = await tournament.newRule.call('Overall Cleanliness', 'Free of odor with no open wounds or infections.');
+      let id = await tournament.addRule.call('Overall Cleanliness', 'Free of odor with no open wounds or infections.');
       assert.exists(id);
       let rule = await tournament.rules.call(id);
       assert.exists(rule);
+    });
+
+    it('An athlete may be added as a competitor', async function() {
+      let id = await tournament.addAthlete.call('Folly', 'Aux', 'Deux', 130, 5, 5, 8);
+      assert.exists(id);
+      console.log(id);
+      let competitor = await tournament.competitors.call(id);
+      console.dir(competitor);
+      assert.exists(competitor);
+      assert.equal(id, competitor.id);
     });
 });

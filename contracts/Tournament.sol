@@ -10,7 +10,11 @@ contract Tournament {
   string public endDateTime;
   MeasurementTypes public measurementType = MeasurementTypes.imperial;
   mapping(bytes32 => Sport) public sports;
-  mapping(bytes32 => Competitor) competitors;
+  mapping(bytes32 => Athlete) public athletes;
+  mapping(bytes32 => Name) public names;
+  mapping(bytes32 => Team) teams;
+  mapping(bytes32 => Competitor) public competitors;
+  mapping(bytes32 => Person) people;
   mapping(bytes32 => Person) participants;
   mapping(bytes32 => Person) audience;
   mapping(bytes32 => Division) divisions;
@@ -66,7 +70,7 @@ contract Tournament {
   }
 
   /**
-   * Creates a rule for an sport's division
+   * Creates a rule for a sport's division
    */
   function addRule(string memory name, string memory description) public onlyAdmin
       returns (bytes32) {
@@ -75,25 +79,35 @@ contract Tournament {
     return rl.id;
   }
 
-  function addAthlete(string memory firstName, string memory lastName, uint8 weightMajor, uint8 weightMinor,
-      uint8 heightMajor, uint8 heightMinor) public onlyAdmin
+  /**
+   * Adds an athlete to the list of competitors of this tournament
+   */
+  function addAthlete(string memory firstName, string memory middleName, string memory lastName,
+        uint8 weightMajor, uint8 weightMinor,
+        uint8 heightMajor, uint8 heightMinor) public onlyAdmin
       returns (bytes32) {
-        Name memory nm = Name({first: firstName, middle: '', last: lastName});
-        Person memory psn = Person({id: this.newId(), name: nm, title: 'Athlete', notes: '', role: PersonRoles.competitor});
-        Weight memory wgt = Weight({major: weightMajor, minor: weightMinor});
-        Height memory hgt = Height({major: heightMajor, minor: heightMinor});
-        Athlete memory ath = Athlete({person: psn, weight: wgt, height: hgt});
-        Competitor memory cmp = Competitor({ id: ath.person.id, typeOf: CompetitorTypes.athlete });
-        return cmp.id;
+        bytes32 athId = this.newId();
+        Name memory nm = Name({id: athId, first: firstName, middle: middleName, last: lastName});
+        Person memory psn = Person({id: athId, name: athId, title: 'Athlete', notes: '', role: PersonRoles.competitor});
+        Athlete memory ath = Athlete({person: athId, weightMajor: weightMajor, weightMinor: weightMinor,
+          heightMajor: heightMajor, heightMinor: heightMinor});
+        Competitor memory cmp = Competitor({ id: athId, typeOf: CompetitorTypes.athlete });
+        people[athId] = psn;
+        names[athId] = nm;
+        competitors[athId] = cmp;
+        athletes[athId] = ath;
+        return ath.person;
   }
 
   /**
    * An athlete is a single person who competes
    */
   struct Athlete {
-    Person person;
-    Weight weight;
-    Height height;
+    bytes32 person;
+    uint8 weightMajor;
+    uint8 weightMinor;
+    uint8 heightMajor;
+    uint8 heightMinor;
   }
 
   enum CompetitorTypes { athlete, team }
@@ -152,6 +166,7 @@ contract Tournament {
    * A person name which may have at most three parts
    */
   struct Name {
+    bytes32 id;
     string first;
     string middle;
     string last;
@@ -176,7 +191,7 @@ contract Tournament {
    */
   struct Person {
     bytes32 id;
-    Name name;
+    bytes32 name;
     string title;
     string notes;
     PersonRoles role;
