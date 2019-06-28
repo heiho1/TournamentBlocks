@@ -24,6 +24,8 @@ contract Tournament {
   address public owner;
   uint idCounter;
 
+  event AthleteAdded(bytes32 id, string name);
+
   modifier onlyAdmin {
     require(msg.sender == admin, 'Only the tournament admin can execute');
     _;
@@ -57,6 +59,14 @@ contract Tournament {
    */
   function setTitle(string memory newName) public onlyAdmin {
     title = newName;
+  }
+
+  function setStartDateTime(string memory start) public onlyAdmin {
+    startDateTime = start;
+  }
+
+  function setEndDateTime(string memory end) public onlyAdmin {
+    endDateTime = end;
   }
 
   /**
@@ -96,6 +106,8 @@ contract Tournament {
         names[athId] = nm;
         competitors[athId] = cmp;
         athletes[athId] = ath;
+
+        emit AthleteAdded(athId, string(abi.encodePacked(nm.first,' ', nm.last)));
         return ath.person;
   }
 
