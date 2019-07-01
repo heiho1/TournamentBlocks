@@ -43,79 +43,35 @@ contract('TournamentTests', function(accounts) {
     });
 
     it('A sport may be added', async function() {
-      let id = await tournament.addSport.call('Shuai Jiao', 'Chinese Wrestling');
-      console.log('Sport id:' + id);
-      assert.exists(id);
+      let tx = await tournament.addSport('Shuai Jiao', 'Chinese Wrestling');
+      assert.equal('SportAdded', tx.logs[0].event);
+      let id = tx.logs[0].args[0]; // get the id from the event
       let sport = await tournament.sports.call(id);
       assert.exists(sport);
       assert.equal('Shuai Jiao', sport.name);
     });
 
     it('A rule may be added', async function() {
-      let id = await tournament.addRule.call('Overall Cleanliness', 'Free of odor with no open wounds or infections.');
-      console.log('Rule id:' + id);
-      assert.exists(id);
+      let tx = await tournament.addRule('Overall Cleanliness', 'Free of odor with no open wounds or infections.');
+      assert.equal('RuleAdded', tx.logs[0].event);
+      let id = tx.logs[0].args[0]; // get the id from the event
       let rule = await tournament.rules.call(id);
       assert.exists(rule);
       assert.equal('Overall Cleanliness', rule.name);
     });
   
-    it('An athlete may be added as a competitor', () => {
+    it('An athlete may be added as a competitor', async () => {
       let id;
       let t;
       let ath;
       let comp;
-      return Tournament.deployed().then(instance => {
-        t = instance;
-        console.log('Athlete contract:' + instance.address);
-        return instance.addAthlete.call('Folly', 'Aux', 'Deux', 130, 5, 5, 8);
-      }).then(identity => {
-        assert.exists(identity);
-        console.log('Athlete id:' + identity);
-        id = identity;
-        return t.athletes.call(identity);
-      }).then(athlete => {
-        assert.exists(athlete);
-        assert.equal(id, athlete.person);
-        ath = athlete;
-        console.log(athlete);
-        return t.competitors.call(ath.person);
-      }).then(competitor => {
-        assert.exists(competitor);
-        assert.equal(id, competitor.id);
-        comp = competitor;
-        console.log(competitor);
-        return competitor;
-      }).then(competitor => {
-        console.log(id);
-        console.log(ath);
-        console.log(comp);
-      });
+      let tx = await tournament.addAthlete('Folly', 'Aux', 'Deux', 130, 5, 5, 8);
+      id = tx.logs[0].args[0];
+      ath = await tournament.athletes.call(id);
+      assert.exists(ath);
+      assert.equal(id, ath.person);
+      comp = await tournament.competitors.call(ath.person);
+      assert.exists(comp);
+      assert.equal(id, comp.id);
     });
-
-    // it('An athlete may be added as a competitor', function() {
-    //   let id; 
-    //   let t;
-    //   Tournament.deployed().then(instance => {
-    //     console.log('Got an instance: ' + instance);
-    //     t = instance;
-    //     console.log('starting addAthlete ' + id);
-    //     return t.addAthlete.call('Folly', 'Aux', 'Deux', 130, 5, 5, 8);
-    //   }).then(identity => {
-    //     assert.exists(identity);
-    //     console.log(identity); 
-    //     id = identity;
-    //     console.log('addAthlete done ' + id);
-    //     return id;
-    //   });
-    //   // let athlete;
-    //   // tournament.athletes.call(id).then(athlete => {
-    //   //   assert.exists(athlete);
-    //   //   assert.equal(id, athlete.id);
-    //   // });
-    //   // let competitor = await tournament.competitors.call(id);
-    //   // console.dir(competitor);
-    //   // assert.exists(competitor);
-    //   // assert.equal(id, competitor.id);
-    // });
 });

@@ -25,6 +25,8 @@ contract Tournament {
   uint idCounter;
 
   event AthleteAdded(bytes32 id, string name);
+  event SportAdded(bytes32 id, string name);
+  event RuleAdded(bytes32 id, string name);
 
   modifier onlyAdmin {
     require(msg.sender == admin, 'Only the tournament admin can execute');
@@ -76,6 +78,7 @@ contract Tournament {
       returns (bytes32) {
     Sport memory sp = Sport({id: this.newId(), name: name, notes: notes});
     sports[sp.id] = sp;
+    emit SportAdded(sp.id, sp.name);
     return sp.id;
   }
 
@@ -86,6 +89,7 @@ contract Tournament {
       returns (bytes32) {
     Rule memory rl = Rule({id: this.newId(), name: name, description: description});
     rules[rl.id] = rl;
+    emit RuleAdded(rl.id, rl.name);
     return rl.id;
   }
 
