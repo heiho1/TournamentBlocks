@@ -1,24 +1,51 @@
 pragma solidity ^0.5.0;
 
+import "./HitchensUnorderedKeySet.sol";
+
 /**
  * A competitive tournament among a number of competitors who participate in matches.
  * Competitors may be individual athletes or teams of athletes.
  */
 contract Tournament {
+  using HitchensUnorderedKeySetLib for HitchensUnorderedKeySetLib.Set;
+
   string public title;
   string public startDateTime;
   string public endDateTime;
   MeasurementTypes public measurementType = MeasurementTypes.imperial;
+  
   mapping(bytes32 => Sport) public sports;
+  HitchensUnorderedKeySetLib.Set sportsRegistry;
+
+  mapping(bytes32 => Person) staff;
+  HitchensUnorderedKeySetLib.Set staffRegistry;
+
   mapping(bytes32 => Athlete) public athletes;
+  HitchensUnorderedKeySetLib.Set athletesRegistry;
+
   mapping(bytes32 => Name) public names;
-  mapping(bytes32 => Team) teams;
+  HitchensUnorderedKeySetLib.Set namesRegistry;
+
+  mapping(bytes32 => Team) public teams;
+  HitchensUnorderedKeySetLib.Set teamsRegistry;
+
   mapping(bytes32 => Competitor) public competitors;
-  mapping(bytes32 => Person) people;
-  mapping(bytes32 => Person) participants;
-  mapping(bytes32 => Person) audience;
+  HitchensUnorderedKeySetLib.Set competitorsRegistry;
+
+  mapping(bytes32 => Person) public participants;
+  HitchensUnorderedKeySetLib.Set participantsRegistry;
+
+  mapping(bytes32 => Person) public audience;
+  HitchensUnorderedKeySetLib.Set audienceRegistry;
+
   mapping(bytes32 => Division) divisions;
+  HitchensUnorderedKeySetLib.Set divisionsRegistry;
+
   mapping(bytes32 => Rule) public rules;
+  HitchensUnorderedKeySetLib.Set rulesRegistry;
+
+  mapping(bytes32 => Match) public matches;
+  HitchensUnorderedKeySetLib.Set matchesRegistry;
 
   address public admin;
   address public owner;
@@ -76,7 +103,9 @@ contract Tournament {
    */
   function addSport(string memory name, string memory notes) public onlyAdmin
       returns (bytes32) {
-    Sport memory sp = Sport({id: this.newId(), name: name, notes: notes});
+    bytes32 spId = this.newId();
+    sportsRegistry.insert(spId);
+    Sport memory sp = Sport({id: spId, name: name, notes: notes});
     sports[sp.id] = sp;
     emit SportAdded(sp.id, sp.name);
     return sp.id;
@@ -87,7 +116,9 @@ contract Tournament {
    */
   function addRule(string memory name, string memory description) public onlyAdmin
       returns (bytes32) {
-    Rule memory rl = Rule({id: this.newId(), name: name, description: description});
+    bytes32 rlId = this.newId();
+    rulesRegistry.insert(rlId);
+    Rule memory rl = Rule({id: rlId, name: name, description: description});
     rules[rl.id] = rl;
     emit RuleAdded(rl.id, rl.name);
     return rl.id;
@@ -101,12 +132,18 @@ contract Tournament {
         uint8 heightMajor, uint8 heightMinor) public onlyAdmin
       returns (bytes32) {
         bytes32 athId = this.newId();
+
+        namesRegistry.insert(athId);
+        participantsRegistry.insert(athId);
+        athletesRegistry.insert(athId);
+        competitorsRegistry.insert(athId);
+        
         Name memory nm = Name({id: athId, first: firstName, middle: middleName, last: lastName});
         Person memory psn = Person({id: athId, name: athId, title: 'Athlete', notes: '', role: PersonRoles.competitor});
         Athlete memory ath = Athlete({person: athId, weightMajor: weightMajor, weightMinor: weightMinor,
           heightMajor: heightMajor, heightMinor: heightMinor});
         Competitor memory cmp = Competitor({ id: athId, typeOf: CompetitorTypes.athlete });
-        people[athId] = psn;
+        participants[athId] = psn;
         names[athId] = nm;
         competitors[athId] = cmp;
         athletes[athId] = ath;
@@ -141,13 +178,13 @@ contract Tournament {
    */
   struct Division {
     bytes32 id;
-    Sport sport;
+    bytes32 sport;
     string name;
     string notes;
     Weight minimum;
     Weight maximum;
-    Competitor[] competitors;
-    Rule[] rules;
+    bytes32[] competitors;
+    bytes32[] rules;
   }
 
   /**
@@ -170,12 +207,12 @@ contract Tournament {
   struct Match {
     string duration;
     string notes;
-    Division division;
-    Competitor[] competitors;
-    Round[] rounds;
-    Penalty[] penalties;
-    Penalty disqualification;
-    Competitor discontinuance;
+    bytes32 division;
+    bytes32[] competitors;
+    bytes32[] rounds;
+    bytes32[] penalties;
+    bytes32 disqualification;
+    bytes32 discontinuance;
   }
 
   /**
@@ -244,9 +281,9 @@ contract Tournament {
    */
   struct Team {
     bytes32 id;
-    Name name;
-    Athlete[] members;
-    Person[] coaches;
+    bytes32 name;
+    bytes32[] members;
+    bytes32[] coaches;
   }
 
   /**

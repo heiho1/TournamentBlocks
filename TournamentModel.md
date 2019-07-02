@@ -10,7 +10,9 @@ A tournament with two or more participants capable of being scheduled.
 - `endDateTime` (string) - ISO 8601 encoding of the end date/time of the tournament.
 - `measurementType` ([MeasurementTypes][]) - the type of measurement units used by the tournament, such as imperial or metric
 - `competitors` (array[Competitor][])
-- `participants` (array[Person][]) - All the people officially participating in a tournament, exclusive of people observing but not participating and competitors 
+- `participants` (array[Person][]) - All the people officially participating in a tournament as athletes
+- `teams` (array[Team][]) - All the teams officially participating in a tournament
+- `staff` (array[Person][]) - People who contribute the tournament in a non-competitive role, such as security, referees or doctors
 - `audience` (array[Person][]) - People attending the tournament but not participating 
 - `divisions` (array[Division][]) - The divisions hosted by this tournament
 - `matches` (array[Match][]) - All matches of this tournament
