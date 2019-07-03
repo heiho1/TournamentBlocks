@@ -3,6 +3,10 @@ pragma solidity ^0.5.0;
 import "./HitchensUnorderedKeySet.sol";
 
 /**
+ * @title  A distributed tournament ledger
+ * @author  James Richards
+ * @notice  This is a pre-release work-in-progress.  Use at your own risk!
+ *
  * A competitive tournament among a number of competitors who participate in matches.
  * Competitors may be individual athletes or teams of athletes.
  */
@@ -13,39 +17,42 @@ contract Tournament {
   string public startDateTime;
   string public endDateTime;
   MeasurementTypes public measurementType = MeasurementTypes.imperial;
-  
-  mapping(bytes32 => Sport) public sports;
-  HitchensUnorderedKeySetLib.Set sportsRegistry;
-
-  mapping(bytes32 => Person) staff;
-  HitchensUnorderedKeySetLib.Set staffRegistry;
 
   mapping(bytes32 => Athlete) public athletes;
   HitchensUnorderedKeySetLib.Set athletesRegistry;
 
-  mapping(bytes32 => Name) public names;
-  HitchensUnorderedKeySetLib.Set namesRegistry;
-
-  mapping(bytes32 => Team) public teams;
-  HitchensUnorderedKeySetLib.Set teamsRegistry;
+  mapping(bytes32 => Person) public audience;
+  HitchensUnorderedKeySetLib.Set audienceRegistry;
 
   mapping(bytes32 => Competitor) public competitors;
   HitchensUnorderedKeySetLib.Set competitorsRegistry;
 
+  mapping(bytes32 => Division) public divisions;
+  HitchensUnorderedKeySetLib.Set divisionsRegistry;
+
+  mapping(bytes32 => Match) public matches;
+  HitchensUnorderedKeySetLib.Set matchesRegistry;
+
+  mapping(bytes32 => Name) public names;
+  HitchensUnorderedKeySetLib.Set namesRegistry;
+
   mapping(bytes32 => Person) public participants;
   HitchensUnorderedKeySetLib.Set participantsRegistry;
-
-  mapping(bytes32 => Person) public audience;
-  HitchensUnorderedKeySetLib.Set audienceRegistry;
-
-  mapping(bytes32 => Division) divisions;
-  HitchensUnorderedKeySetLib.Set divisionsRegistry;
 
   mapping(bytes32 => Rule) public rules;
   HitchensUnorderedKeySetLib.Set rulesRegistry;
 
-  mapping(bytes32 => Match) public matches;
-  HitchensUnorderedKeySetLib.Set matchesRegistry;
+  mapping(bytes32 => Sport) public sports;
+  HitchensUnorderedKeySetLib.Set sportsRegistry;
+
+  mapping(bytes32 => Person) public staff;
+  HitchensUnorderedKeySetLib.Set staffRegistry;
+
+  mapping(bytes32 => Team) public teams;
+  HitchensUnorderedKeySetLib.Set teamsRegistry;
+
+  mapping(bytes32 => Weight) public weights;
+  HitchensUnorderedKeySetLib.Set weightsRegistry;
 
   address public admin;
   address public owner;
@@ -54,6 +61,7 @@ contract Tournament {
   event AthleteAdded(bytes32 id, string name);
   event SportAdded(bytes32 id, string name);
   event RuleAdded(bytes32 id, string name);
+  event DivisionAdded(bytes32 id, string name);
 
   modifier onlyAdmin {
     require(msg.sender == admin, 'Only the tournament admin can execute');
@@ -65,11 +73,20 @@ contract Tournament {
     _;
   }
 
+  /**
+   * Builds a tournament assigning the msg.sender as the owner and admin of the tournament.
+   */
   constructor() public {
       owner = msg.sender;
       admin = owner;
   }
 
+  /**
+   * Generates a new identifier as a bytes32 value that is suitable for uniquely identifying
+   * all things within the tournament.
+   *
+   * @return bytes32  a unique identifier that remains unique for each subsequent call of this function
+   */
   function newId() public returns (bytes32) {
     ++idCounter;
     return keccak256(abi.encodePacked(msg.sender, idCounter));
@@ -77,7 +94,9 @@ contract Tournament {
 
   /**
    * Allows the owner of a tournament to specify an administrator responsible for executing
-   * the actual matches of the tournament
+   * the actual matches of the tournament.
+   *
+   * @param newAdmin  address to assign administrative rights to
    */
   function setAdmin(address newAdmin) public onlyOwner {
     admin = newAdmin;
@@ -85,51 +104,86 @@ contract Tournament {
 
   /**
    * Set the title of this tournament to a given name
+   *
+   * @param  newName  a name to set as the title of this tournament
    */
   function setTitle(string memory newName) public onlyAdmin {
     title = newName;
   }
 
+  /**
+   * ISO 8601 encoding of the start time of this tournament
+   *
+   * @param start  datetime when this tournament begins
+   */
   function setStartDateTime(string memory start) public onlyAdmin {
     startDateTime = start;
   }
 
+
+  /**
+   * ISO 8601 encoding of the end time of this tournament
+   *
+   * @param end  datetime when this tournament ends
+   */
   function setEndDateTime(string memory end) public onlyAdmin {
     endDateTime = end;
   }
 
   /**
-   * Adds a sport to this tournament
+   * Adds a sport to this tournament.  Tournaments may have competitions among multiple sports
+   *
+   * @param name  a particular, named sport, such as Judo
+   * @param notes  arbitrary notes regarding the sport, such as brief history or detailed description
+   * @return bytes32  uniquely identifying the created sport
    */
   function addSport(string memory name, string memory notes) public onlyAdmin
       returns (bytes32) {
     bytes32 spId = this.newId();
     sportsRegistry.insert(spId);
-    Sport memory sp = Sport({id: spId, name: name, notes: notes});
-    sports[sp.id] = sp;
+    Sport storage sp = sports[spId];
+    sp.id = spId;
+    sp.name = name;
+    sp.notes = notes;
     emit SportAdded(sp.id, sp.name);
     return sp.id;
   }
 
   /**
-   * Creates a rule for a sport's division
+   * Creates a rule for the tournament or a particular sport or division, such as cleanliness requirements,
+   * or weight limitations for a division
+   *
+   * @param name  human friendly name of the rule
+   * @param description  detailed description of the rule
+   * @return bytes32  uniquely identifying the created rule
    */
   function addRule(string memory name, string memory description) public onlyAdmin
       returns (bytes32) {
     bytes32 rlId = this.newId();
     rulesRegistry.insert(rlId);
-    Rule memory rl = Rule({id: rlId, name: name, description: description});
-    rules[rl.id] = rl;
+    Rule storage rl = rules[rlId];
+    rl.id = rlId;
+    rl.name = name;
+    rl.description = description;
     emit RuleAdded(rl.id, rl.name);
     return rl.id;
   }
 
   /**
-   * Adds an athlete to the list of competitors of this tournament
+   * Adds an athlete to the list of competitors of this tournament.
+   *
+   * @param firstName  of the athlete
+   * @param middleName  of the athlete
+   * @param lastName  of the athlete
+   * @param weightMajor  the major unit of the athlete's weight, such as 100 pounds
+   * @param weightMinor  the minor unit of the athlete's weight, such as 5 ounces
+   * @param heightMajor  the major unit of the athlete's height, such as 5 feet
+   * @param heightMinor  the minor unit of the athlete's height, such as 9 inches
+   * @return bytes32  uniquely identifying the created athlete
    */
   function addAthlete(string memory firstName, string memory middleName, string memory lastName,
-        uint8 weightMajor, uint8 weightMinor,
-        uint8 heightMajor, uint8 heightMinor) public onlyAdmin
+          uint8 weightMajor, uint8 weightMinor, uint8 heightMajor, uint8 heightMinor)
+        public onlyAdmin
       returns (bytes32) {
         bytes32 athId = this.newId();
 
@@ -137,7 +191,6 @@ contract Tournament {
         participantsRegistry.insert(athId);
         athletesRegistry.insert(athId);
         competitorsRegistry.insert(athId);
-        
         Name memory nm = Name({id: athId, first: firstName, middle: middleName, last: lastName});
         Person memory psn = Person({id: athId, name: athId, title: 'Athlete', notes: '', role: PersonRoles.competitor});
         Athlete memory ath = Athlete({person: athId, weightMajor: weightMajor, weightMinor: weightMinor,
@@ -150,6 +203,40 @@ contract Tournament {
 
         emit AthleteAdded(athId, string(abi.encodePacked(nm.first,' ', nm.last)));
         return ath.person;
+  }
+
+  /**
+   * Adds a division for a particular weight range to this tournament
+   *
+   * @param name  of the division
+   * @param notes  additional information on the division
+   * @param sportId  of the sport competed upon within this division
+   * @param weightMajor  the major unit of the maximum weight a competitor may be to compete within this division
+   * @param weightMinor  the minor unit of the maximum weight a competitor may be to compete within this division
+   * @return bytes32  uniquely identifying the created division
+   */
+  function addDivision(string memory name, string memory notes, bytes32 sportId, uint8 weightMajor, uint8 weightMinor)
+      public onlyAdmin
+    returns (bytes32) {
+      bytes32 divId = this.newId();
+      bytes32 wgtId = this.newId();
+
+      weightsRegistry.insert(wgtId);
+      Weight storage wgt = weights[wgtId];
+      wgt.id = wgtId;
+      wgt.major = weightMajor;
+      wgt.minor = weightMinor;
+
+      divisionsRegistry.insert(divId);
+      Division storage div = divisions[divId];
+      div.id = divId;
+      div.name = name;
+      div.notes = notes;
+      div.sport = sportId;
+      div.weightClass = wgtId;
+
+      emit DivisionAdded(divId, name);
+      return divId;
   }
 
   /**
@@ -174,17 +261,14 @@ contract Tournament {
   }
 
   /**
-   * A division within the tournament for a particular set of competitors, such a competitors within a particular weight class
+   * A division within the tournament for a particular set of competitors, such as competitors within a particular weight class
    */
   struct Division {
     bytes32 id;
     bytes32 sport;
     string name;
     string notes;
-    Weight minimum;
-    Weight maximum;
-    bytes32[] competitors;
-    bytes32[] rules;
+    bytes32 weightClass;
   }
 
   /**
@@ -290,6 +374,7 @@ contract Tournament {
    * A specific weight under a supported unit of weight measurement
    */
   struct Weight {
+    bytes32 id;
     uint8 major;
     uint8 minor;
   }

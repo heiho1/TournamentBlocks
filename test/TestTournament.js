@@ -47,7 +47,6 @@ contract('TournamentTests', function(accounts) {
       assert.equal('SportAdded', tx.logs[0].event);
       let id = tx.logs[0].args[0]; // get the id from the event
       let sport = await tournament.sports.call(id);
-      assert.exists(sport);
       assert.equal('Shuai Jiao', sport.name);
     });
 
@@ -56,22 +55,29 @@ contract('TournamentTests', function(accounts) {
       assert.equal('RuleAdded', tx.logs[0].event);
       let id = tx.logs[0].args[0]; // get the id from the event
       let rule = await tournament.rules.call(id);
-      assert.exists(rule);
       assert.equal('Overall Cleanliness', rule.name);
     });
   
     it('An athlete may be added as a competitor', async () => {
-      let id;
-      let t;
-      let ath;
-      let comp;
       let tx = await tournament.addAthlete('Folly', 'Aux', 'Deux', 130, 5, 5, 8);
-      id = tx.logs[0].args[0];
-      ath = await tournament.athletes.call(id);
-      assert.exists(ath);
+      let id = tx.logs[0].args[0];
+      let ath = await tournament.athletes.call(id);
       assert.equal(id, ath.person);
-      comp = await tournament.competitors.call(ath.person);
-      assert.exists(comp);
+      let comp = await tournament.competitors.call(ath.person);
       assert.equal(id, comp.id);
+    });
+
+    it('A division may be added', async () => {
+      let tx = await tournament.addSport('Freestyle wrestling', 'Safer than catch wrestling');
+      let sportId = tx.logs[0].args[0]; // get the id from the event
+      tx = await tournament.addDivision('125 lb', '', sportId, 125, 0);
+      let divId = tx.logs[0].args[0];
+      let div = await tournament.divisions.call(divId);
+      assert.equal(divId, div.id);
+      assert.equal('125 lb', div.name);
+      assert.exists(div.weightClass);
+      let wgt = await tournament.weights.call(div.weightClass);
+      assert.equal(125, wgt.major);
+      assert.equal(sportId, div.sport);
     });
 });
