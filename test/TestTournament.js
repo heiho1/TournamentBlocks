@@ -80,4 +80,25 @@ contract('TournamentTests', function(accounts) {
       assert.equal(125, wgt.major);
       assert.equal(sportId, div.sport);
     });
+
+    it('A competitor may be added and removed from a division', async() => {
+      let tx = await tournament.addSport('Greco-Roman wrestling', 'No leg attacks!');
+      let sportId = tx.logs[0].args[0]; // get the id from the event
+      tx = await tournament.addDivision('145 lb', '', sportId, 145, 0);
+      let divId = tx.logs[0].args[0];
+      tx = await tournament.addAthlete('Samuel', 'Deadlift', 'Clemenr', 145, 5, 5, 9);
+      let athId = tx.logs[0].args[0];
+      
+      tx = await tournament.addCompetitorToDivision(divId, athId);
+      assert.equal(divId, tx.logs[0].args[0]);
+      assert.equal(athId, tx.logs[0].args[1]);
+
+      assert(await tournament.hasCompetitor.call(divId, athId));
+
+      tx = await tournament.removeCompetitorFromDivision(divId, athId);
+      assert.equal(divId, tx.logs[0].args[0]);
+      assert.equal(athId, tx.logs[0].args[1]);
+
+      assert(! (await tournament.hasCompetitor.call(divId, athId)));
+    });
 });

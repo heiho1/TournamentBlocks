@@ -29,6 +29,7 @@ contract Tournament {
 
   mapping(bytes32 => Division) public divisions;
   HitchensUnorderedKeySetLib.Set divisionsRegistry;
+  mapping(bytes32 => HitchensUnorderedKeySetLib.Set) divisionCompetitorsRegistry;
 
   mapping(bytes32 => Match) public matches;
   HitchensUnorderedKeySetLib.Set matchesRegistry;
@@ -62,6 +63,8 @@ contract Tournament {
   event SportAdded(bytes32 id, string name);
   event RuleAdded(bytes32 id, string name);
   event DivisionAdded(bytes32 id, string name);
+  event CompetitorAddedToDivision(bytes32 divisionId, bytes32 competitorId);
+  event CompetitorRemovedFromDivision(bytes32 divisionId, bytes32 competitorId);
 
   modifier onlyAdmin {
     require(msg.sender == admin, 'Only the tournament admin can execute');
@@ -239,6 +242,47 @@ contract Tournament {
       return divId;
   }
 
+  /**
+   * Adds a given identified competitor to a given identified division, with the requirements that
+   * both the competitor and division exist and the competitor is not already a member of the division
+   */
+  function addCompetitorToDivision(bytes32 divisionId, bytes32 competitorId)
+      public onlyAdmin
+    returns (bool) {
+      require(divisionsRegistry.exists(divisionId), "The identified division must exist.");
+      require(competitorsRegistry.exists(competitorId), "The identified competitor must exist.");
+      require(!divisionCompetitorsRegistry[divisionId].exists(competitorId), "Competitor is already a member of the division.");
+      divisionCompetitorsRegistry[divisionId].insert(competitorId);
+
+      emit CompetitorAddedToDivision(divisionId, competitorId);
+      return divisionCompetitorsRegistry[divisionId].exists(competitorId);
+  }
+
+  /**
+   * Removes a given identified competitor from a given identified division, with the requirements that
+   * both the competitor and division exist and the competitor is already a member of the division
+   */
+  function removeCompetitorFromDivision(bytes32 divisionId, bytes32 competitorId)
+      public onlyAdmin
+    returns (bool) {
+      require(divisionsRegistry.exists(divisionId), "The identified division must exist.");
+      require(competitorsRegistry.exists(competitorId), "The identified competitor must exist.");
+      require(divisionCompetitorsRegistry[divisionId].exists(competitorId), "Competitor is not already a member of the division.");
+      divisionCompetitorsRegistry[divisionId].remove(competitorId);
+
+      emit CompetitorRemovedFromDivision(divisionId, competitorId);
+      return !divisionCompetitorsRegistry[divisionId].exists(competitorId);
+  }
+
+  /**
+   * Conditional indicating that a given identified competitor is a member of a given identified division
+   */
+  function hasCompetitor(bytes32 divisionId, bytes32 competitorId)
+      public view onlyAdmin
+    returns (bool) {
+      return divisionCompetitorsRegistry[divisionId].exists(competitorId);
+  }
+  
   /**
    * An athlete is a single person who competes
    */
