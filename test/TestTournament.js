@@ -81,24 +81,61 @@ contract('TournamentTests', function(accounts) {
       assert.equal(sportId, div.sport);
     });
 
-    it('A competitor may be added and removed from a division', async() => {
+    it('A competitor may be added and removed from a division', async () => {
       let tx = await tournament.addSport('Greco-Roman wrestling', 'No leg attacks!');
       let sportId = tx.logs[0].args[0]; // get the id from the event
       tx = await tournament.addDivision('145 lb', '', sportId, 145, 0);
       let divId = tx.logs[0].args[0];
-      tx = await tournament.addAthlete('Samuel', 'Deadlift', 'Clemenr', 145, 5, 5, 9);
+      tx = await tournament.addAthlete('Samuel', 'Deadlift', 'Clemens', 145, 5, 5, 9);
       let athId = tx.logs[0].args[0];
-      
-      tx = await tournament.addCompetitorToDivision(divId, athId);
+
+      tx = await tournament.addCompetitor(divId, athId);
       assert.equal(divId, tx.logs[0].args[0]);
       assert.equal(athId, tx.logs[0].args[1]);
 
       assert(await tournament.hasCompetitor.call(divId, athId));
 
-      tx = await tournament.removeCompetitorFromDivision(divId, athId);
+      tx = await tournament.removeCompetitor(divId, athId);
       assert.equal(divId, tx.logs[0].args[0]);
       assert.equal(athId, tx.logs[0].args[1]);
 
       assert(! (await tournament.hasCompetitor.call(divId, athId)));
+    });
+
+    it('A match may be added and removed from a division', async () => {
+      let tx = await tournament.addSport('Brazilian JuJitsu', 'No gi');
+      let sportId = tx.logs[0].args[0]; // get the id from the event
+      tx = await tournament.addDivision('145 lb', '', sportId, 145, 0);
+      let divId = tx.logs[0].args[0];
+      tx = await tournament.addAthlete('Samuel', 'Deadlift', 'Clemens', 145, 5, 5, 9);
+      let ath1Id = tx.logs[0].args[0];
+      tx = await tournament.addAthlete('Fred', 'Muscles', 'Blarney', 145, 0, 5, 8);
+      let ath2Id = tx.logs[0].args[0];
+
+      tx = await tournament.addCompetitor(divId, ath1Id);
+      assert.equal(divId, tx.logs[0].args[0]);
+      assert.equal(ath1Id, tx.logs[0].args[1]);
+
+      tx = await tournament.addCompetitor(divId, ath2Id);
+      assert.equal(divId, tx.logs[0].args[0]);
+      assert.equal(ath2Id, tx.logs[0].args[1]);
+
+      assert(await tournament.hasCompetitor.call(divId, ath1Id));
+      assert(await tournament.hasCompetitor.call(divId, ath2Id));
+
+      const comps = [ ath1Id, ath2Id ];
+      tx = await tournament.addMatch(divId, comps, "05:00", "This is a test match");
+      let mtchId = tx.logs[0].args[0];
+      assert(await tournament.hasMatch.call(mtchId, divId));
+
+      let mtch = await tournament.matches.call(mtchId);
+      assert.equal(divId, mtch.division);
+      assert.equal("05:00", mtch.duration);
+
+      tx = await tournament.removeMatch(mtchId, divId);
+      assert.equal(mtchId, tx.logs[0].args[0]);
+
+      let exists = await tournament.hasMatch.call(mtchId, divId);
+      assert.equal(false, exists);
     });
 });

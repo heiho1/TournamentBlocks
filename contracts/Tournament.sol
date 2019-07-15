@@ -30,6 +30,7 @@ contract Tournament {
   mapping(bytes32 => Division) public divisions;
   HitchensUnorderedKeySetLib.Set divisionsRegistry;
   mapping(bytes32 => HitchensUnorderedKeySetLib.Set) divisionCompetitorsRegistry;
+  mapping(bytes32 => HitchensUnorderedKeySetLib.Set) divisionMatchesRegistry;
 
   mapping(bytes32 => Match) public matches;
   HitchensUnorderedKeySetLib.Set matchesRegistry;
@@ -39,6 +40,9 @@ contract Tournament {
 
   mapping(bytes32 => Person) public participants;
   HitchensUnorderedKeySetLib.Set participantsRegistry;
+
+  mapping(bytes32 => Penalty) public penalties;
+  HitchensUnorderedKeySetLib.Set penaltiesRegistry;
 
   mapping(bytes32 => Rule) public rules;
   HitchensUnorderedKeySetLib.Set rulesRegistry;
@@ -65,6 +69,9 @@ contract Tournament {
   event DivisionAdded(bytes32 id, string name);
   event CompetitorAddedToDivision(bytes32 divisionId, bytes32 competitorId);
   event CompetitorRemovedFromDivision(bytes32 divisionId, bytes32 competitorId);
+  event MatchAdded(bytes32 matchId, bytes32 divisionId);
+  event MatchRemoved(bytes32 matchId, bytes32 divisionId);
+  event PenaltyAdded(bytes32 penaltyId, bytes32 competitorId, uint256 cost);
 
   modifier onlyAdmin {
     require(msg.sender == admin, 'Only the tournament admin can execute');
@@ -246,7 +253,7 @@ contract Tournament {
    * Adds a given identified competitor to a given identified division, with the requirements that
    * both the competitor and division exist and the competitor is not already a member of the division
    */
-  function addCompetitorToDivision(bytes32 divisionId, bytes32 competitorId)
+  function addCompetitor(bytes32 divisionId, bytes32 competitorId)
       public onlyAdmin
     returns (bool) {
       require(divisionsRegistry.exists(divisionId), "The identified division must exist.");
@@ -262,7 +269,7 @@ contract Tournament {
    * Removes a given identified competitor from a given identified division, with the requirements that
    * both the competitor and division exist and the competitor is already a member of the division
    */
-  function removeCompetitorFromDivision(bytes32 divisionId, bytes32 competitorId)
+  function removeCompetitor(bytes32 divisionId, bytes32 competitorId)
       public onlyAdmin
     returns (bool) {
       require(divisionsRegistry.exists(divisionId), "The identified division must exist.");
@@ -282,7 +289,70 @@ contract Tournament {
     returns (bool) {
       return divisionCompetitorsRegistry[divisionId].exists(competitorId);
   }
-  
+
+  /**
+   * Adds a match of a defined duration with initial notes to a given division with a given set of two or more competitors.
+   */
+  function addMatch(bytes32 divisionId, bytes32[] memory comps, string memory duration, string memory notes)
+      public onlyAdmin
+    returns (bytes32) {
+    require(divisionsRegistry.exists(divisionId), "The identified division must exist.");
+    require(comps.length >= 2, "At least two competitors are required for a match.");
+
+    bytes32 mtchId = this.newId();
+    matchesRegistry.insert(mtchId);
+
+    Match storage mtch = matches[mtchId];
+    mtch.competitors = comps;
+    mtch.division = divisionId;
+    mtch.duration = duration;
+    mtch.notes = notes;
+    divisionMatchesRegistry[divisionId].insert(mtchId);
+
+    emit MatchAdded(mtchId, divisionId);
+    return mtchId;
+  }
+
+  /**
+   * Removes an identified match from the set of matches.
+   */
+  function removeMatch(bytes32 matchId, bytes32 divisionId) public onlyAdmin returns (bool) {
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+    require(divisionMatchesRegistry[divisionId].exists(matchId), "The identified match is not within the identified division.");
+
+    Match storage mtch = matches[matchId];
+    bytes32 divId = mtch.division;
+    matchesRegistry.remove(matchId);
+    divisionMatchesRegistry[divisionId].remove(matchId);
+
+    emit MatchRemoved(matchId, divId);
+    return true;
+  }
+
+  /**
+   * Conditional indicating that a given identified match is a member of a given identified division
+   */
+  function hasMatch(bytes32 matchId, bytes32 divisionId) public view onlyAdmin returns (bool) {
+    return divisionMatchesRegistry[divisionId].exists(matchId);
+  }
+
+  function addPenalty(bytes32 matchId, bytes32 ruleId, uint256 cost, bytes32 competitorId) public onlyAdmin returns (bool) {
+    require(rulesRegistry.exists(ruleId), "The identified rule must exist.");
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+    require(competitorsRegistry.exists(competitorId), "The identified competitor must exist.");
+
+    bytes32 pnId = this.newId();
+    Penalty storage pen = penalties[pnId];
+    pen.rule = ruleId;
+    pen.cost = cost;
+    pen.offender = competitorId;
+    Match storage mtch = matches[matchId];
+    mtch.penalties.push(pnId);
+
+    emit PenaltyAdded(pnId, competitorId, cost);
+    return true;
+  }
+
   /**
    * An athlete is a single person who competes
    */
@@ -357,9 +427,9 @@ contract Tournament {
    * A violation of a rule for a competition match by an offending Competitor
    */
   struct Penalty {
-    Rule rule;
+    bytes32 rule;
     uint256 cost;
-    Competitor offender;
+    bytes32 offender;
   }
 
   /**
