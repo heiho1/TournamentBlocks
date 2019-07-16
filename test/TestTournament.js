@@ -132,10 +132,49 @@ contract('TournamentTests', function(accounts) {
       assert.equal(divId, mtch.division);
       assert.equal("05:00", mtch.duration);
 
+      let retComps = await tournament.getCompetitors.call(mtchId);
+      assert.equal(2, retComps.length);
+
       tx = await tournament.removeMatch(mtchId, divId);
       assert.equal(mtchId, tx.logs[0].args[0]);
 
       let exists = await tournament.hasMatch.call(mtchId, divId);
       assert.equal(false, exists);
+    });
+
+    it('A penalty may be added to a match', async () => {
+      let tx = await tournament.addSport('Boxing', 'American style boxing');
+      let sportId = tx.logs[0].args[0]; // get the id from the event
+      tx = await tournament.addDivision('Heavyweight', '', sportId, 201, 0);
+      let divId = tx.logs[0].args[0];
+      tx = await tournament.addAthlete('Mike', '', 'Tyson', 218, 0, 5, 11);
+      let ath1Id = tx.logs[0].args[0];
+      tx = await tournament.addAthlete('Muhammed', '', 'Ali', 212, 0, 6, 3);
+      let ath2Id = tx.logs[0].args[0];
+
+      tx = await tournament.addCompetitor(divId, ath1Id);
+      assert.equal(divId, tx.logs[0].args[0]);
+      assert.equal(ath1Id, tx.logs[0].args[1]);
+
+      tx = await tournament.addCompetitor(divId, ath2Id);
+      assert.equal(divId, tx.logs[0].args[0]);
+      assert.equal(ath2Id, tx.logs[0].args[1]);
+
+      const comps = [ ath1Id, ath2Id ];
+      tx = await tournament.addMatch(divId, comps, "03:00", "This is a standard boxing round");
+      let mtchId = tx.logs[0].args[0];
+      assert(await tournament.hasMatch.call(mtchId, divId));
+
+      tx = await tournament.addRule('No biting', 'The teeth shall not be used in professional boxing');
+      let ruleId = tx.logs[0].args[0];
+
+      tx = await tournament.addPenalty(mtchId, ruleId, 1, ath1Id);
+      let penId = tx.logs[0].args[0]; 
+      let pen = await tournament.penalties.call(penId);
+      assert.equal(ath1Id, pen.offender);
+      assert.equal(1, pen.cost);
+
+      let penTest = await tournament.hasPenalty.call(mtchId, penId);
+      assert(penTest);
     });
 });

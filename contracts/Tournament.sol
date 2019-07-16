@@ -34,6 +34,7 @@ contract Tournament {
 
   mapping(bytes32 => Match) public matches;
   HitchensUnorderedKeySetLib.Set matchesRegistry;
+  mapping(bytes32 => HitchensUnorderedKeySetLib.Set) matchesPenaltiesRegistry;
 
   mapping(bytes32 => Name) public names;
   HitchensUnorderedKeySetLib.Set namesRegistry;
@@ -43,6 +44,10 @@ contract Tournament {
 
   mapping(bytes32 => Penalty) public penalties;
   HitchensUnorderedKeySetLib.Set penaltiesRegistry;
+
+  mapping(bytes32 => Round) rounds;
+  HitchensUnorderedKeySetLib.Set roundsRegistry;
+  mapping(bytes32 => HitchensUnorderedKeySetLib.Set) matchRoundsRegistry;
 
   mapping(bytes32 => Rule) public rules;
   HitchensUnorderedKeySetLib.Set rulesRegistry;
@@ -333,7 +338,15 @@ contract Tournament {
    * Conditional indicating that a given identified match is a member of a given identified division
    */
   function hasMatch(bytes32 matchId, bytes32 divisionId) public view onlyAdmin returns (bool) {
+    if (!matchesRegistry.exists(matchId)) {
+      return false;
+    }
     return divisionMatchesRegistry[divisionId].exists(matchId);
+  }
+
+  function getCompetitors(bytes32 matchId) public view onlyAdmin returns (bytes32[] memory) {
+    // require(matchesRegistry.exists(matchId), "The identified match must exist.");
+    return matches[matchId].competitors;
   }
 
   function addPenalty(bytes32 matchId, bytes32 ruleId, uint256 cost, bytes32 competitorId) public onlyAdmin returns (bool) {
@@ -346,11 +359,19 @@ contract Tournament {
     pen.rule = ruleId;
     pen.cost = cost;
     pen.offender = competitorId;
-    Match storage mtch = matches[matchId];
-    mtch.penalties.push(pnId);
+    pen.matchId = matchId;
+    penaltiesRegistry.insert(pnId);
+    matchesPenaltiesRegistry[matchId].insert(pnId);
 
     emit PenaltyAdded(pnId, competitorId, cost);
     return true;
+  }
+
+  function hasPenalty(bytes32 matchId, bytes32 penaltyId) public view onlyAdmin returns (bool) {
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+    require(penaltiesRegistry.exists(penaltyId), "The identified penalty must exist.");
+
+    return matchesPenaltiesRegistry[matchId].exists(penaltyId);
   }
 
   /**
@@ -407,8 +428,6 @@ contract Tournament {
     string notes;
     bytes32 division;
     bytes32[] competitors;
-    bytes32[] rounds;
-    bytes32[] penalties;
     bytes32 disqualification;
     bytes32 discontinuance;
   }
@@ -429,6 +448,7 @@ contract Tournament {
   struct Penalty {
     bytes32 rule;
     uint256 cost;
+    bytes32 matchId;
     bytes32 offender;
   }
 
@@ -452,7 +472,8 @@ contract Tournament {
    * A round within a match with numerical scores mapped to competitor identifiers
    */
   struct Round {
-    mapping(string => uint256) scores;
+    bytes32 id;
+    mapping(bytes32 => uint256) scores;
   }
 
   /**
