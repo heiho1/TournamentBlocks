@@ -47,10 +47,12 @@ contract Tournament {
 
   mapping(bytes32 => Round) rounds;
   HitchensUnorderedKeySetLib.Set roundsRegistry;
-  mapping(bytes32 => HitchensUnorderedKeySetLib.Set) matchRoundsRegistry;
 
   mapping(bytes32 => Rule) public rules;
   HitchensUnorderedKeySetLib.Set rulesRegistry;
+
+  mapping(bytes32 => Score) public scores;
+  HitchensUnorderedKeySetLib.Set scoresRegistry;
 
   mapping(bytes32 => Sport) public sports;
   HitchensUnorderedKeySetLib.Set sportsRegistry;
@@ -74,9 +76,13 @@ contract Tournament {
   event DivisionAdded(bytes32 id, string name);
   event CompetitorAddedToDivision(bytes32 divisionId, bytes32 competitorId);
   event CompetitorRemovedFromDivision(bytes32 divisionId, bytes32 competitorId);
+  event CompetitorDisqualification(bytes32 matchId, bytes32 competitorId);
+  event CompetitorDiscontinuance(bytes32 matchId, bytes32 competitorId);
   event MatchAdded(bytes32 matchId, bytes32 divisionId);
   event MatchRemoved(bytes32 matchId, bytes32 divisionId);
   event PenaltyAdded(bytes32 penaltyId, bytes32 competitorId, uint256 cost);
+  event RoundAdded(bytes32 roundId, bytes32 matchId);
+  event ScoreAdded(bytes32 scoredId, bytes32 competitorId, uint256 score);
 
   modifier onlyAdmin {
     require(msg.sender == admin, 'Only the tournament admin can execute');
@@ -257,6 +263,10 @@ contract Tournament {
   /**
    * Adds a given identified competitor to a given identified division, with the requirements that
    * both the competitor and division exist and the competitor is not already a member of the division
+   * 
+   * @param divisionId  to which the competitor will be added
+   * @param competitorId  to be added to a division
+   * @return bool  indicating the existence of the competitor within the division
    */
   function addCompetitor(bytes32 divisionId, bytes32 competitorId)
       public onlyAdmin
@@ -273,6 +283,10 @@ contract Tournament {
   /**
    * Removes a given identified competitor from a given identified division, with the requirements that
    * both the competitor and division exist and the competitor is already a member of the division
+   *
+   * @param divisionId  from which the competitor will be removed
+   * @param competitorId  to remove from a division
+   * @return bool  indicating the removal of the competitor from the division
    */
   function removeCompetitor(bytes32 divisionId, bytes32 competitorId)
       public onlyAdmin
@@ -288,6 +302,10 @@ contract Tournament {
 
   /**
    * Conditional indicating that a given identified competitor is a member of a given identified division
+   *
+   * @param divisionId  to check for a given competitor
+   * @param competitorId  to check for
+   * @return bool  true if the competitor exists within the division, false otherwise
    */
   function hasCompetitor(bytes32 divisionId, bytes32 competitorId)
       public view onlyAdmin
@@ -297,6 +315,12 @@ contract Tournament {
 
   /**
    * Adds a match of a defined duration with initial notes to a given division with a given set of two or more competitors.
+   *
+   * @param divisionId  to which the match will be added
+   * @param comps  the competitors within the match
+   * @param duration  ISO 8601 time duration of the match
+   * @param notes  possibly empty notes regarding the match
+   * @return bytes32  uniquely identifying the created match
    */
   function addMatch(bytes32 divisionId, bytes32[] memory comps, string memory duration, string memory notes)
       public onlyAdmin
@@ -320,6 +344,10 @@ contract Tournament {
 
   /**
    * Removes an identified match from the set of matches.
+   *
+   * @param matchId  to be removed
+   * @param divisionId  the division to remove the match from
+   * @return bool  true if the match was removed, false otherwise
    */
   function removeMatch(bytes32 matchId, bytes32 divisionId) public onlyAdmin returns (bool) {
     require(matchesRegistry.exists(matchId), "The identified match must exist.");
@@ -331,11 +359,15 @@ contract Tournament {
     divisionMatchesRegistry[divisionId].remove(matchId);
 
     emit MatchRemoved(matchId, divId);
-    return true;
+    return divisionMatchesRegistry[divisionId].exists(matchId);
   }
 
   /**
    * Conditional indicating that a given identified match is a member of a given identified division
+   *
+   * @param matchId  to check for
+   * @param divisionId  to check for the given match within
+   * @return bool  truei f the match exists, false otherwise
    */
   function hasMatch(bytes32 matchId, bytes32 divisionId) public view onlyAdmin returns (bool) {
     if (!matchesRegistry.exists(matchId)) {
@@ -344,11 +376,24 @@ contract Tournament {
     return divisionMatchesRegistry[divisionId].exists(matchId);
   }
 
+  /**
+   * Accessor for the competitors within an identified match
+   *
+   * @param matchId  to retrieve the competitors from
+   */
   function getCompetitors(bytes32 matchId) public view onlyAdmin returns (bytes32[] memory) {
     // require(matchesRegistry.exists(matchId), "The identified match must exist.");
     return matches[matchId].competitors;
   }
 
+  /**
+   * Mutator to set a penalty upon an identified competitor within an identified match
+   *
+   * @param matchId  within which to assign the penalty
+   * @param ruleId  identifying the rule which has been violation
+   * @param cost  the numeric cost of the penalty upon the score of the competitor
+   * @param competitorId  identifying the competitor to be assigned the penalty
+   */
   function addPenalty(bytes32 matchId, bytes32 ruleId, uint256 cost, bytes32 competitorId) public onlyAdmin returns (bool) {
     require(rulesRegistry.exists(ruleId), "The identified rule must exist.");
     require(matchesRegistry.exists(matchId), "The identified match must exist.");
@@ -364,15 +409,141 @@ contract Tournament {
     matchesPenaltiesRegistry[matchId].insert(pnId);
 
     emit PenaltyAdded(pnId, competitorId, cost);
-    return true;
+    return matchesPenaltiesRegistry[matchId].exists(pnId);
   }
 
+  /**
+   * Conditional indicating if a particular penalty exists within an identified match
+   * 
+   * @param matchId  to search for the penalty within
+   * @param penaltyId  of the penalty
+   * @return bool  indicating the existence of the penalty
+   */
   function hasPenalty(bytes32 matchId, bytes32 penaltyId) public view onlyAdmin returns (bool) {
     require(matchesRegistry.exists(matchId), "The identified match must exist.");
-    require(penaltiesRegistry.exists(penaltyId), "The identified penalty must exist.");
 
     return matchesPenaltiesRegistry[matchId].exists(penaltyId);
   }
+
+  /**
+   * Mutator adding a disqualification for a given competitor within an identified match
+   *
+   * @param matchId  to add the disqualification to
+   * @param competitorId  being disqualified
+   * @return bool  indicating the outcome of the addition
+   */
+  function addDisqualification(bytes32 matchId, bytes32 competitorId) public onlyAdmin returns (bool) {
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+    require(competitorsRegistry.exists(competitorId), "The identified competitor must exist.");
+
+    Match storage mtch = matches[matchId];
+    mtch.disqualification = competitorId;
+
+    emit CompetitorDisqualification(matchId, competitorId);
+    return true;
+  }
+
+  /**
+   * Conditional indicating a match has a disqualification for an identified competitor
+   *
+   * @param matchId  to add the disqualification to
+   * @param competitorId  being disqualified
+   * @return bool  true if the competitor has been disqualified, false otherwise
+   */
+   function hasDisqualification(bytes32 matchId, bytes32 competitorId) public view onlyAdmin returns (bool) {
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+    require(competitorsRegistry.exists(competitorId), "The identified competitor must exist.");
+    
+    return matches[matchId].disqualification == competitorId;
+   }
+
+   /**
+    * Mutator adding a discontinuance for a given competitor within an identified match, i.e. if 
+    * a competitor is unable to continue due to injury
+    *
+    * @param matchId  to add the discontinuance to
+    * @param competitorId  unable to continue
+    * @return bool  indicating the outcome of the addition
+    */
+   function addDiscontinuance(bytes32 matchId, bytes32 competitorId) public onlyAdmin returns (bool) {
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+    require(competitorsRegistry.exists(competitorId), "The identified competitor must exist.");
+
+    Match storage mtch = matches[matchId];
+    mtch.discontinuance = competitorId;
+
+    emit CompetitorDiscontinuance(matchId, competitorId);
+    return true;
+   }
+
+  /**
+   * Conditional indicating a match has a discontinuance for an identified competitor
+   *
+   * @param matchId  to add the discontinuance to
+   * @param competitorId  having the discontinuance
+   * @return bool  true if the competitor was unable to continue, false otherwise
+   */
+   function hasDiscontinuance(bytes32 matchId, bytes32 competitorId) public view onlyAdmin returns (bool) {
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+    require(competitorsRegistry.exists(competitorId), "The identified competitor must exist.");
+    
+    return matches[matchId].discontinuance == competitorId;
+   }
+
+   /**
+    * Add a score for a given competitor with the given value
+    *
+    * @param competitorId  of the competitor 
+    * @param value  the competitor's score
+    * @return bytes32  identifying the added score
+    */
+   function addScore(bytes32 competitorId, uint256 value) public onlyAdmin returns (bytes32) {
+    require(competitorsRegistry.exists(competitorId), "The identified competitor must exist.");
+
+    bytes32 scId = this.newId();
+    Score storage sc = scores[scId];
+    sc.id = scId;
+    sc.competitor = competitorId;
+    sc.value = value;
+    scoresRegistry.insert(scId);
+
+    emit ScoreAdded(scId, competitorId, value);
+    return scId;
+   }
+
+   /**
+    * Add a scored round to the identified match
+    * 
+    * @param matchId  to add the round to
+    * @param _scores  of the match competitors
+    * @return bytes32  identifying the added round
+    */
+   function addRound(bytes32 matchId, bytes32[] memory _scores) public onlyAdmin returns (bytes32) {
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+
+    bytes32 rndId = this.newId();
+    Round storage rnd = rounds[rndId];
+    rnd.id = rndId;
+    rnd.scores = _scores;
+    Match storage mtch = matches[matchId];
+    mtch.rounds.push(rndId);
+    
+    emit RoundAdded(rndId, matchId);
+    return rndId;
+   }
+
+   /**
+    * Accessor for the rounds of an identified match
+    *
+    * @param matchId  to retrieve the rounds of
+    * @return bytes32[]  possibly empty array of sequential rounds
+    */
+   function getRounds(bytes32 matchId) public view onlyAdmin returns (bytes32[] memory) {
+    require(matchesRegistry.exists(matchId), "The identified match must exist.");
+
+    Match storage mtch = matches[matchId];
+    return mtch.rounds;
+   }
 
   /**
    * An athlete is a single person who competes
@@ -428,6 +599,7 @@ contract Tournament {
     string notes;
     bytes32 division;
     bytes32[] competitors;
+    bytes32[] rounds;
     bytes32 disqualification;
     bytes32 discontinuance;
   }
@@ -473,7 +645,7 @@ contract Tournament {
    */
   struct Round {
     bytes32 id;
-    mapping(bytes32 => uint256) scores;
+    bytes32[] scores;
   }
 
   /**
@@ -483,6 +655,15 @@ contract Tournament {
     bytes32 id;
     string name;
     string description;
+  }
+
+  /**
+   * A numerical score for a competitor
+   */
+  struct Score {
+    bytes32 id;
+    bytes32 competitor;
+    uint256 value;
   }
 
   /**

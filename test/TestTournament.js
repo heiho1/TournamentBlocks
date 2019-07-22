@@ -177,4 +177,47 @@ contract('TournamentTests', function(accounts) {
       let penTest = await tournament.hasPenalty.call(mtchId, penId);
       assert(penTest);
     });
+
+    it('A competitor may have a scored round', async() => {
+      let tx = await tournament.addSport('Boxing', 'American style boxing');
+      let sportId = tx.logs[0].args[0]; // get the id from the event
+      tx = await tournament.addDivision('Heavyweight', '', sportId, 201, 0);
+      let divId = tx.logs[0].args[0];
+      tx = await tournament.addAthlete('Mike', '', 'Tyson', 218, 0, 5, 11);
+      let ath1Id = tx.logs[0].args[0];
+      tx = await tournament.addAthlete('Muhammed', '', 'Ali', 212, 0, 6, 3);
+      let ath2Id = tx.logs[0].args[0];
+
+      tx = await tournament.addCompetitor(divId, ath1Id);
+      assert.equal(divId, tx.logs[0].args[0]);
+      assert.equal(ath1Id, tx.logs[0].args[1]);
+
+      tx = await tournament.addCompetitor(divId, ath2Id);
+      assert.equal(divId, tx.logs[0].args[0]);
+      assert.equal(ath2Id, tx.logs[0].args[1]);
+
+      const comps = [ ath1Id, ath2Id ];
+      tx = await tournament.addMatch(divId, comps, "03:00", "This is a standard boxing round");
+      let mtchId = tx.logs[0].args[0];
+      assert(await tournament.hasMatch.call(mtchId, divId));
+
+      tx = await tournament.addScore(ath1Id, 10);
+      assert.equal(ath1Id, tx.logs[0].args[1]);
+      let ath1ScoreId = tx.logs[0].args[0];
+
+      tx = await tournament.addScore(ath2Id, 9);
+      assert.equal(ath2Id, tx.logs[0].args[1]);
+      let ath2ScoreId = tx.logs[0].args[0];
+
+      let ath1Score = await tournament.scores.call(ath1ScoreId);
+      let ath2Score = await tournament.scores.call(ath2ScoreId);
+      assert.equal(10, await ath1Score.value);
+      assert.equal(9, await ath2Score.value);
+
+      tx = await tournament.addRound(mtchId, [ath1ScoreId, ath2ScoreId]);
+      let rndId = tx.logs[0].args[0];
+      let rounds = await tournament.getRounds(mtchId);
+      assert.equal(1, rounds.length);
+      assert.equal(rndId, rounds[0]);
+    });
 });
