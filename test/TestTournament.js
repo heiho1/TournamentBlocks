@@ -30,6 +30,22 @@ contract('TournamentTests', function(accounts) {
       assert.equal(end, tEnd);
     });
 
+    it('Tournament details may be set in aggregate', async function() {
+      const title = 'Rogue One';
+      const start = '2020-06-28T09:00:00';
+      const end = '2020-06-28T16:00:00';
+
+      await tournament.setDetails(title, start, end);
+
+      let tTitle = await tournament.title.call();
+      let tStart = await tournament.startDateTime.call();
+      let tEnd = await tournament.endDateTime.call();
+
+      assert.equal(title, tTitle);
+      assert.equal(start, tStart);
+      assert.equal(end, tEnd);
+    });
+
     it('Tournament has an owner and an admin', async function() {
       let owner = await tournament.owner.call();
       let admin = await tournament.admin.call();

@@ -123,6 +123,20 @@ contract Tournament {
     admin = newAdmin;
   }
 
+
+  /**
+   * Set the title of this tournament to a given title, start and end
+   *
+   * @param  _title  to set as the title of this tournament
+   * @param  _start  to set as the tournament start datetime
+   * @param  _end  to set as the tournament end datetime
+   */
+  function setDetails(string memory _title, string memory _start, string memory _end) public onlyOwner {
+    title = _title;
+    startDateTime = _start;
+    endDateTime = _end;
+  }
+
   /**
    * Set the title of this tournament to a given name
    *
