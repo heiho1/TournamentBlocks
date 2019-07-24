@@ -1,6 +1,6 @@
 <template>
   <div class='metamask-info'>
-    <h1>Hello Metamask</h1>
+    <h1>Metamask Info</h1>
 
     <p>Web3: {{ web3.version }}</p>
     <p>Network: {{ web3.networkId }}</p>
