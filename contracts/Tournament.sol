@@ -69,6 +69,7 @@ contract Tournament {
   address public admin;
   address public owner;
   uint idCounter;
+  bool isStopped;
 
   event AthleteAdded(bytes32 id, string name);
   event SportAdded(bytes32 id, string name);
@@ -86,6 +87,7 @@ contract Tournament {
 
   modifier onlyAdmin {
     require(msg.sender == admin, 'Only the tournament admin can execute');
+    require(!isStopped, 'This tournament has been stopped.');
     _;
   }
 
@@ -100,6 +102,21 @@ contract Tournament {
   constructor() public {
       owner = msg.sender;
       admin = owner;
+      isStopped = false;
+  }
+
+  /** 
+   * Circuit breaker for a tournament that halts all tournament administration.  Callable only by the tournament owner.
+   */
+  function stop() public onlyOwner {
+    isStopped = true;
+  }
+
+  /** 
+   * Circuit enabler for a tournament that enables all tournament administration.  Callable only by the tournament owner.
+   */
+  function start() public onlyOwner {
+    isStopped = false;
   }
 
   /**
