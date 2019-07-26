@@ -16,11 +16,11 @@ Currently this project is a work in progress and any use of the implementation i
 
 This project relies upon some common frameworks:
 
-* Node [tested against 10.16.0]: https://nodejs.org/en/
-* VueJS/Vue-cli [tested against 3.9.3]: https://vuejs.org and https://cli.vuejs.org
-* Truffle [tested against v5.0.18]: https://www.trufflesuite.com
-* Solidity [tested against v0.5.9]: https://solidity.readthedocs.io/en/v0.5.10/
-* Ganache CLI [tested against v6.4.3]: https://github.com/trufflesuite/ganache-cli
+* [Node](https://nodejs.org/en/) : tested against 10.16.0 
+* [VueJS/Vue-cli](https://vuejs.org and https://cli.vuejs.org) : tested against 3.9.3
+* [Truffle](https://www.trufflesuite.com) : tested against v5.0.18
+* [Solidity](https://solidity.readthedocs.io/en/v0.5.10/) : tested against v0.5.9
+* [Ganache CLI](https://github.com/trufflesuite/ganache-cli) : tested against v6.4.3
 
 ## Setup
 
@@ -28,6 +28,15 @@ Install the above dependencies by following the installation instructions from t
 
 The project is divided into a main blockchain layer contained in the root of the TournamentBlocks checkout and a
 separate VueJS based UI contained within the tournament-blocks-ui sub-project.  
+
+## Usage
+
+The tournament-blocks-ui user interface integrates with [MetaMask](https://metamask.io/) and has been tested via deployment using the [Remix IDE](http://remix.ethereum.org).  You may freely deploy Tournament.sol to any blockchain which supports the declared Solidity version, currently version ^0.5.0.  The tournament UI may be configured to use your deployed contract by updating the file tournament-blocks-ui/src/util/tournamentContract.js.  In this file set 
+
+* address to the address of the tournament deployment
+* ABI to the ABI of the deployed tournament 
+
+To test the integration, follow the instructions defined in the "VueJS development" below to run a development server or deploy the UI build distribution to a suitable HTTP server.
 
 ### Truffle development
 
@@ -37,7 +46,7 @@ The TournamentBlocks root project is currently setup to run again the ganache-cl
 `truffle migrate` - deploys the contracts to the ganache-cli instance
 `truffle test` - runs the tests defined in the test sub-directory
 
-### VueJs development
+### VueJS development
 
 The tournament-blocks-ui sub-project expects the vue-cli to be installed.  
 

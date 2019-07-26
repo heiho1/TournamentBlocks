@@ -166,20 +166,20 @@ contract Tournament {
   /**
    * ISO 8601 encoding of the start time of this tournament
    *
-   * @param start  datetime when this tournament begins
+   * @param _start  datetime when this tournament begins
    */
-  function setStartDateTime(string memory start) public onlyAdmin {
-    startDateTime = start;
+  function setStartDateTime(string memory _start) public onlyAdmin {
+    startDateTime = _start;
   }
 
 
   /**
    * ISO 8601 encoding of the end time of this tournament
    *
-   * @param end  datetime when this tournament ends
+   * @param _end  datetime when this tournament ends
    */
-  function setEndDateTime(string memory end) public onlyAdmin {
-    endDateTime = end;
+  function setEndDateTime(string memory _end) public onlyAdmin {
+    endDateTime = _end;
   }
 
   /**

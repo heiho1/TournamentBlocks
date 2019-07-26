@@ -1,4 +1,5 @@
 const Tournament = artifacts.require('Tournament');
+const truffleAssert = require('truffle-assertions');
 
 contract('TournamentTests', function(accounts) {
     const TOURNAMENT_NAME = 'Shuai Jiao Tournament';
@@ -28,6 +29,24 @@ contract('TournamentTests', function(accounts) {
 
       assert.equal(start, tStart);
       assert.equal(end, tEnd);
+    });
+
+    it ('Tournament can be circuit broken and restarted', async function() {
+      const title = 'A tournament to stop';
+      await tournament.setTitle(title);
+      let checkTitle = await tournament.title.call();
+      assert.equal(title, checkTitle);
+      await tournament.stop();
+      await truffleAssert.reverts(
+        tournament.setTitle(title + ' foo'),
+        'This tournament has been stopped.'
+      );
+      checkTitle = await tournament.title.call();
+      assert.equal(title, checkTitle);
+      await tournament.start();
+      await tournament.setTitle(title + ' foo');
+      checkTitle = await tournament.title.call();
+      assert.equal(title + ' foo', checkTitle);      
     });
 
     it('Tournament details may be set in aggregate', async function() {

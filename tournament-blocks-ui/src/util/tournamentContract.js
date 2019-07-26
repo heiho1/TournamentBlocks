@@ -1,4 +1,4 @@
-const address='0xe8fd355132604e2fe167301277d85299bbc6afdd';
+const address='0x4cfceea3266951452020f8ddbdead1215eeb4099';
 const ABI = [
 	{
 		"constant": false,
@@ -27,6 +27,15 @@ const ABI = [
 				"type": "bool"
 			}
 		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "stop",
+		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -762,7 +771,7 @@ const ABI = [
 		"constant": false,
 		"inputs": [
 			{
-				"name": "start",
+				"name": "_start",
 				"type": "string"
 			}
 		],
@@ -809,9 +818,18 @@ const ABI = [
 	},
 	{
 		"constant": false,
+		"inputs": [],
+		"name": "start",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
 		"inputs": [
 			{
-				"name": "end",
+				"name": "_end",
 				"type": "string"
 			}
 		],
