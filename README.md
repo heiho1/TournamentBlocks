@@ -45,7 +45,9 @@ A demo video of basic usage is in the demo/ sub-folder.  You may view a large si
 The TournamentBlocks root project is currently setup to run again the ganache-cli test blockchain, which defaults to the port 8545.  
 
 `truffle compile` - compiles the contracts
+
 `truffle migrate` - deploys the contracts to the ganache-cli instance
+
 `truffle test` - runs the tests defined in the test sub-directory
 
 ### VueJS development
@@ -53,7 +55,9 @@ The TournamentBlocks root project is currently setup to run again the ganache-cl
 The tournament-blocks-ui sub-project expects the vue-cli to be installed.  
 
 `npm run serve` - runs a local dev server on port 8080 that support hot-reloading of local changes
+
 `npm run build` - builds a 'production' version of the single page application that may be deployed to a static host such as Apache or nginx or AWS S3/Cloudfront.
+
 `npm run lint` - will run the babel-eslint linter for code quality of the VueJS layer
 
 ## Future Development
