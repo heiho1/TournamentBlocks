@@ -38,6 +38,8 @@ The tournament-blocks-ui user interface integrates with [MetaMask](https://metam
 
 To test the integration, follow the instructions defined in the "VueJS development" below to run a development server or deploy the UI build distribution to a suitable HTTP server.
 
+A demo video of basic usage is in the demo/ sub-folder.  You may view a large size version of the demo at https://www.screencast.com/t/AtGsYjWOl as well.
+
 ### Truffle development
 
 The TournamentBlocks root project is currently setup to run again the ganache-cli test blockchain, which defaults to the port 8545.  
